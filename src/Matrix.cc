@@ -117,7 +117,7 @@ void Matrix::Init(Local<Object> target) {
   Nan::SetPrototypeMethod(ctor, "release", Release);
   Nan::SetPrototypeMethod(ctor, "subtract", Subtract);
 
-  target->Set(Nan::New("Matrix").ToLocalChecked(), ctor->GetFunction());
+  Nan::Set(target, Nan::New("Matrix").ToLocalChecked(), Nan::GetFunction(ctor).ToLocalChecked());
 };
 
 NAN_METHOD(Matrix::New) {
@@ -249,9 +249,9 @@ NAN_METHOD(Matrix::Pixel) {
       cv::Vec3b intensity = self->mat.at<cv::Vec3b>(y, x);
 
       v8::Local < v8::Array > arr = Nan::New<v8::Array>(3);
-      arr->Set(0, Nan::New<Number>(intensity[0]));
-      arr->Set(1, Nan::New<Number>(intensity[1]));
-      arr->Set(2, Nan::New<Number>(intensity[2]));
+      Nan::Set(arr, 0, Nan::New<Number>(intensity[0]));
+      Nan::Set(arr, 1, Nan::New<Number>(intensity[1]));
+      Nan::Set(arr, 2, Nan::New<Number>(intensity[2]));
       info.GetReturnValue().Set(arr);
     } else if (self->mat.channels() == 1) {
       uchar intensity = self->mat.at<uchar>(y, x);
@@ -340,7 +340,7 @@ NAN_METHOD(Matrix::GetData) {
   }
 
   v8::Local<v8::Object> globalObj = Nan::GetCurrentContext()->Global();
-  v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(Nan::New<String>("Buffer").ToLocalChecked()));
+  v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(Nan::Get(globalObj, Nan::New<String>("Buffer").ToLocalChecked()).ToLocalChecked());
   v8::Local<v8::Value> constructorArgs[3] = {buf, Nan::New<v8::Integer>((unsigned) size), Nan::New<v8::Integer>(0)};
   v8::Local<v8::Object> actualBuffer = Nan::NewInstance(bufferConstructor, 3, constructorArgs).ToLocalChecked();
 
@@ -497,8 +497,8 @@ NAN_METHOD(Matrix::Size) {
   SETUP_FUNCTION(Matrix)
 
   v8::Local < v8::Array > arr = Nan::New<Array>(2);
-  arr->Set(0, Nan::New<Number>(self->mat.size().height));
-  arr->Set(1, Nan::New<Number>(self->mat.size().width));
+  Nan::Set(arr, 0, Nan::New<Number>(self->mat.size().height));
+  Nan::Set(arr, 1, Nan::New<Number>(self->mat.size().width));
 
   info.GetReturnValue().Set(arr);
 }
@@ -554,7 +554,7 @@ NAN_METHOD(Matrix::Row) {
 
   for (int x = 0; x < width; x++) {
     double v = Matrix::DblGet(self->mat, y, x);
-    arr->Set(x, Nan::New<Number>(v));
+    Nan::Set(arr, x, Nan::New<Number>(v));
   }
 
   info.GetReturnValue().Set(arr);
@@ -572,15 +572,15 @@ NAN_METHOD(Matrix::PixelRow) {
     for (int x = 0; x < width; x++) {
       cv::Vec3b pixel = self->mat.at<cv::Vec3b>(y, x);
       int offset = x * 3;
-      arr->Set(offset, Nan::New<Number>((double) pixel.val[0]));
-      arr->Set(offset + 1, Nan::New<Number>((double) pixel.val[1]));
-      arr->Set(offset + 2, Nan::New<Number>((double) pixel.val[2]));
+      Nan::Set(arr, offset, Nan::New<Number>((double) pixel.val[0]));
+      Nan::Set(arr, offset + 1, Nan::New<Number>((double) pixel.val[1]));
+      Nan::Set(arr, offset + 2, Nan::New<Number>((double) pixel.val[2]));
     }
   } else {
     arr = Nan::New<Array>(width);
     for (int x = 0; x < width; x++) {
       int pixel = (int)self->mat.at<unsigned char>(y, x);
-      arr->Set(x, Nan::New<Number>(pixel));
+      Nan::Set(arr, x, Nan::New<Number>(pixel));
     }
   }
 
@@ -596,7 +596,7 @@ NAN_METHOD(Matrix::Col) {
 
   for (int y = 0; y < height; y++) {
     double v = Matrix::DblGet(self->mat, y, x);
-    arr->Set(y, Nan::New<Number>(v));
+    Nan::Set(arr, y, Nan::New<Number>(v));
   }
   info.GetReturnValue().Set(arr);
 }
@@ -613,15 +613,15 @@ NAN_METHOD(Matrix::PixelCol) {
     for (int y = 0; y < height; y++) {
       cv::Vec3b pixel = self->mat.at<cv::Vec3b>(y, x);
       int offset = y * 3;
-      arr->Set(offset, Nan::New<Number>((double) pixel.val[0]));
-      arr->Set(offset + 1, Nan::New<Number>((double) pixel.val[1]));
-      arr->Set(offset + 2, Nan::New<Number>((double) pixel.val[2]));
+      Nan::Set(arr, offset, Nan::New<Number>((double) pixel.val[0]));
+      Nan::Set(arr, offset + 1, Nan::New<Number>((double) pixel.val[1]));
+      Nan::Set(arr, offset + 2, Nan::New<Number>((double) pixel.val[2]));
     }
   } else {
     arr = Nan::New<Array>(height);
     for (int y = 0; y < height; y++) {
       int pixel = (int)self->mat.at<unsigned char>(y, x);
-      arr->Set(y, Nan::New<Number>(pixel));
+      Nan::Set(arr, y, Nan::New<Number>(pixel));
     }
   }
   info.GetReturnValue().Set(arr);
@@ -669,19 +669,19 @@ NAN_METHOD(Matrix::ToBuffer) {
     // Get this options argument
     v8::Handle < v8::Object > options = v8::Local<v8::Object>::Cast(info[0]);
     // If the extension (image format) is provided
-    if (options->Has(Nan::New<String>("ext").ToLocalChecked())) {
+    if (Nan::Has(options, Nan::New<String>("ext").ToLocalChecked()).FromJust()) {
       v8::String::Utf8Value str(
           options->Get(Nan::New<String>("ext").ToLocalChecked())->ToString());
       optExt = *str;
       ext = (const char *) optExt.c_str();
     }
-    if (options->Has(Nan::New<String>("jpegQuality").ToLocalChecked())) {
+    if (Nan::Has(options,Nan::New<String>("jpegQuality").ToLocalChecked()).FromJust()) {
       int compression =
           options->Get(Nan::New<String>("jpegQuality").ToLocalChecked())->IntegerValue();
       params.push_back(CV_IMWRITE_JPEG_QUALITY);
       params.push_back(compression);
     }
-    if (options->Has(Nan::New<String>("pngCompression").ToLocalChecked())) {
+    if (Nan::Has(options, Nan::New<String>("pngCompression").ToLocalChecked()).FromJust()) {
       int compression =
           options->Get(Nan::New<String>("pngCompression").ToLocalChecked())->IntegerValue();
       params.push_back(CV_IMWRITE_PNG_COMPRESSION);
